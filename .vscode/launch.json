@@ -1,0 +1,56 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    // To debug, make sure a *.spec.ts file is active in the editor, then run a configuration
+    {
+      "name": "[SRV] Debug",
+      // "type": "node",
+      // "request": "launch",
+      // "protocol": "auto",
+      // "program": "${workspaceRoot}/server/src/index.ts",
+      "preLaunchTask": "tsc",
+      // "console": "integratedTerminal",
+      // "sourceMaps": true,
+      // "smartStep": true,
+      // "outFiles": ["${workspaceRoot}/server/dist/**/*.js"]
+      "type": "node",
+      "request": "launch",
+      // "name": "Build Project",
+      "program": "${workspaceFolder}/server/src/index.ts",
+      // "preLaunchTask": "npm: build",
+      "sourceMaps": true,
+      "smartStep": true,
+      "internalConsoleOptions": "openOnSessionStart",
+      "outFiles": ["${workspaceFolder}/server/dist/**/*.js"]
+    },
+    {
+      "name": "[APP] Launch development",
+      "cwd": "${workspaceFolder}/app",
+      "request": "launch",
+      "type": "dart",
+      "program": "lib/main_development.dart",
+      "args": [
+        "--flavor",
+        "development",
+        "--target",
+        "lib/main_development.dart"
+      ]
+    },
+    {
+      "name": "[APP] Launch staging",
+      "cwd": "${workspaceFolder}/app",
+      "request": "launch",
+      "type": "dart",
+      "program": "lib/main_staging.dart",
+      "args": ["--flavor", "staging", "--target", "lib/main_staging.dart"]
+    },
+    {
+      "name": "[APP] Launch production",
+      "cwd": "${workspaceFolder}/app",
+      "request": "launch",
+      "type": "dart",
+      "program": "lib/main_production.dart",
+      "args": ["--flavor", "production", "--target", "lib/main_production.dart"]
+    }
+  ]
+}

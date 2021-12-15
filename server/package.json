@@ -1,0 +1,54 @@
+{
+  "name": "lightly",
+  "version": "5.0.3",
+  "author": "jeroen-meijer (jeroenfkmeijer@gmail.com)",
+  "license": "MIT",
+  "engines": {
+    "node": ">=16.13.1 <17.0.0"
+  },
+  "scripts": {
+    "start": "npm run ts-node",
+    "start:dev": "nodemon --exec npm run ts-node",
+    "start:dev:test": "nodemon --exec npm run ts-node:test",
+    "ts-node": "ts-node ./src/index.ts",
+    "prets-node:test": "npm test",
+    "ts-node:test": "npm run ts-node",
+    "lint": "eslint . --ext .js,.jsx,.ts,.tsx",
+    "pretest": "npm run lint",
+    "test": "jest"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jeroen-meijer/lightly.git"
+  },
+  "bugs": {
+    "url": "https://github.com/jeroen-meijer/lightly/issues"
+  },
+  "homepage": "https://github.com/jeroen-meijer/lightly#readme",
+  "devDependencies": {
+    "@types/jest": "^26.0.21",
+    "@types/node": "^12.12.27",
+    "@typescript-eslint/eslint-plugin": "^2.34.0",
+    "@typescript-eslint/parser": "^2.20.0",
+    "eslint": "^6.8.0",
+    "jest": "^25.5.4",
+    "nodemon": "^2.0.7",
+    "ts-jest": "^25.2.1",
+    "ts-node": "^8.6.2",
+    "typescript": "^4.2.3"
+  },
+  "jest": {
+    "moduleFileExtensions": [
+      "ts",
+      "tsx",
+      "js",
+      "jsx"
+    ],
+    "notify": true,
+    "rootDir": "src/",
+    "transform": {
+      ".(ts|tsx)": "ts-jest"
+    },
+    "testRegex": "(/__tests__/.*|\\.(test|spec))\\.(ts|tsx|js)$"
+  }
+}

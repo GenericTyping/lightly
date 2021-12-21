@@ -91,11 +91,11 @@ class LightlyLocalServer(BaseHTTPRequestHandler):
                 logging.error(get_stack_trace())
                 self._set_response(
                     400,
-                    '{"status": "FAILURE", "action": "set", "error": "',
-                    str(e),
-                    '", "stack": "',
-                    get_stack_trace(),
-                    '"}',
+                    '{"status": "FAILURE", "action": "set", "error": "%s", "stack": "%s"}'
+                    % (
+                        str(e),
+                        get_stack_trace(),
+                    ),
                 )
         else:
             # Unknown path
@@ -114,6 +114,21 @@ def runServer():
     logging.info("Stopping httpd")
 
 
+def get_stack_trace():
+    import traceback, sys
+
+    exc = sys.exc_info()[0]
+    stack = traceback.extract_stack()[:-1]  # last one would be full_stack()
+    if exc is not None:  # i.e. an exception is present
+        del stack[-1]  # remove call of full_stack, the printed exception
+        # will contain the caught exception caller instead
+    trc = "Traceback (most recent call last):\n"
+    stackstr = trc + "".join(traceback.format_list(stack))
+    if exc is not None:
+        stackstr += "  " + traceback.format_exc().lstrip(trc)
+    return stackstr
+
+
 if __name__ == "__main__":
     now = datetime.now()
     logging.basicConfig(
@@ -129,18 +144,3 @@ if __name__ == "__main__":
         ],
     )
     runServer()
-
-
-def get_stack_trace():
-    import traceback, sys
-
-    exc = sys.exc_info()[0]
-    stack = traceback.extract_stack()[:-1]  # last one would be full_stack()
-    if exc is not None:  # i.e. an exception is present
-        del stack[-1]  # remove call of full_stack, the printed exception
-        # will contain the caught exception caller instead
-    trc = "Traceback (most recent call last):\n"
-    stackstr = trc + "".join(traceback.format_list(stack))
-    if exc is not None:
-        stackstr += "  " + traceback.format_exc().lstrip(trc)
-    return stackstr

@@ -7,11 +7,13 @@
   "search.exclude": {
     "**/node_modules": true
   },
+
   "files.watcherExclude": {
     "**/.git/objects/**": true,
     "**/.git/subtree-cache/**": true,
     "**/node_modules/**": true,
-    "env-*": true
+    "env-*": true,
+    "**/src/firebaseConfig.ts": true
   },
   "files.exclude": {
     "**/.git": true,
@@ -19,7 +21,15 @@
     "**/node_modules": true,
     "env*": true
   },
-  "cSpell.words": ["GPIO", "GRBW", "rfile", "RGBW", "wfile"],
+  "cSpell.words": [
+    "Firestore",
+    "GPIO",
+    "GRBW",
+    "rfile",
+    "RGBW",
+    "unsub",
+    "wfile"
+  ],
   "[python]": {
     "editor.detectIndentation": false,
     "editor.insertSpaces": true,

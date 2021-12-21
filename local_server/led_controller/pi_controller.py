@@ -40,7 +40,7 @@ class PiController(LedController):
 # pixels = neopixel.NeoPixel(
 #     _PIXEL_PIN,
 #     _NUM_PIXELS,
-#     pixel__order=_ORDER,
+#     pixel_order=_ORDER,
 #     auto_write=False,
 #     brightness=0.2,
 # )

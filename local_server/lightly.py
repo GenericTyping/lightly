@@ -78,16 +78,25 @@ class LightlyLocalServer(BaseHTTPRequestHandler):
                 # [ [255, 0, 0], null, [0, 0, 255] ]
                 pixels: list[tuple[int, int, int]] = []
                 for pixel in json.loads(body):
+                    print("Pixel: ", pixel)
                     if pixel == None:
                         pixels.append(None)
                     else:
                         pixels.append(tuple(pixel))
 
                 controller.setPixels(pixels)
-                self._set_response(200, '{"status": "OK", "action": "set"}')
+                self._set_response(200, '{"status": "SUCCESS", "action": "set"}')
             except Exception as e:
                 logging.error(e)
-                self._set_response(400, '{"status": "ERROR", "action": "set"}')
+                logging.error(get_stack_trace())
+                self._set_response(
+                    400,
+                    '{"status": "FAILURE", "action": "set", "error": "',
+                    str(e),
+                    '", "stack": "',
+                    get_stack_trace(),
+                    '"}',
+                )
         else:
             # Unknown path
             self._set_response(404)
@@ -120,3 +129,18 @@ if __name__ == "__main__":
         ],
     )
     runServer()
+
+
+def get_stack_trace():
+    import traceback, sys
+
+    exc = sys.exc_info()[0]
+    stack = traceback.extract_stack()[:-1]  # last one would be full_stack()
+    if exc is not None:  # i.e. an exception is present
+        del stack[-1]  # remove call of full_stack, the printed exception
+        # will contain the caught exception caller instead
+    trc = "Traceback (most recent call last):\n"
+    stackstr = trc + "".join(traceback.format_list(stack))
+    if exc is not None:
+        stackstr += "  " + traceback.format_exc().lstrip(trc)
+    return stackstr

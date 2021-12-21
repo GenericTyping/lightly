@@ -44,12 +44,13 @@ class PiController(LedController):
 
     def setPixels(self, data: dict[int, tuple[int, int, int]]) -> None:
         for i in data:
-            if data[i] is None:
+            rgb = data[i]
+            if rgb is None:
                 continue
             if self.order == neopixel.RGB:
-                self.pixels[i] = data[i]
+                self.pixels[i] = rgb
             else:
-                self.pixels[i] = (data[1], data[0], data[2])
+                self.pixels[i] = (rgb[1], rgb[0], rgb[2])
         self._show_pixels()
 
 

@@ -44,7 +44,7 @@ class LightlyLocalServer(BaseHTTPRequestHandler):
         logging.info(
             "GET request,\nPath: %s\nHeaders:\n%s\n", str(self.path), str(self.headers)
         )
-        self._set_response(200)
+        self._set_response(200, dict_to_json({"success": True, "status": "ok"}))
 
     def do_POST(self):
         content_length = int(self.headers["Content-Length"])
@@ -85,16 +85,21 @@ class LightlyLocalServer(BaseHTTPRequestHandler):
                         pixels.append(tuple(pixel))
 
                 controller.setPixels(pixels)
-                self._set_response(200, '{"status": "SUCCESS", "action": "set"}')
+                self._set_response(
+                    200, dict_to_json({"success": True, "pixels": pixels})
+                )
             except Exception as e:
                 logging.error(e)
                 logging.error(get_stack_trace())
                 self._set_response(
                     400,
-                    '{"status": "FAILURE", "action": "set", "error": "%s", "stack": "%s"}'
-                    % (
-                        str(e),
-                        get_stack_trace(),
+                    dict_to_json(
+                        {
+                            "success": False,
+                            "action": "set",
+                            "error": str(e),
+                            "stack_trace": get_stack_trace(),
+                        }
                     ),
                 )
         else:
@@ -127,6 +132,10 @@ def get_stack_trace():
     if exc is not None:
         stackstr += "  " + traceback.format_exc().lstrip(trc)
     return stackstr
+
+
+def dict_to_json(d):
+    return json.dumps(d, sort_keys=True, indent=4)
 
 
 if __name__ == "__main__":

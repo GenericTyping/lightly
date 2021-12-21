@@ -1,6 +1,8 @@
 from .led_controller import LedController
 import board
 import neopixel
+import time
+import threading
 
 _PIXEL_PIN = board.D18
 _NUM_PIXELS = 200
@@ -29,11 +31,26 @@ class PiController(LedController):
             auto_write=False,
             brightness=0.2,
         )
+        self.pixels.fill((0, 0, 0))
+        self._start_pixel_show_timer()
         super().__init__()
 
-    def setPixels(self, pixels: list[tuple[int, int, int]]) -> None:
-        self.pixels.fill(pixels)
+    def _start_pixel_show_timer(self):
+        self._show_pixels()
+        threading.Timer(0.5, self._start_pixel_show_timer).start()
+
+    def _show_pixels(self):
         self.pixels.show()
+
+    def setPixels(self, pixels: list[tuple[int, int, int]]) -> None:
+        for i, pixel in enumerate(pixels):
+            if pixel is None:
+                continue
+            if self.order == neopixel.RGB:
+                self.pixels[i] = pixel
+            else:
+                self.pixels[i] = (pixel[1], pixel[0], pixel[2])
+        self._show_pixels()
 
 
 # Neopixel

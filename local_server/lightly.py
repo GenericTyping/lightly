@@ -10,6 +10,7 @@ import time
 import logging
 from datetime import datetime
 from http.server import BaseHTTPRequestHandler, HTTPServer
+from typing import Callable
 
 from led_controller.led_controller import LedController
 
@@ -59,34 +60,57 @@ class LightlyLocalServer(BaseHTTPRequestHandler):
 
         if self.path == "/set":
             try:
-                # 'body' is a JSON list of lists, each containing 3 elements
-                # representing a pixel's RGB values.
+                # 'body' is a JSON dictionary of lists, each containing 3 elements
+                # representing a pixel's RGB values. The keys are the pixel's
+                # indices.
                 #
                 # Example:
-                # [ [255, 0, 0], [0, 255, 0], [0, 0, 255] ]
+                # {
+                #   "0": [255, 0, 0],
+                #   "1": [0, 255, 0],
+                #   "2": [0, 0, 255]
+                # }
                 #
-                # It needs to be converted to a list of tuples, each containing
-                # 3 elements representing a pixel's RGB values.
+                # It needs to be converted to a map of tuples, each containing
+                # 3 elements representing a pixel's RGB values. The keys are the
+                # pixel's indices, this time as a number.
                 #
                 # Example:
-                # [ (255, 0, 0), (0, 255, 0), (0, 0, 255) ]
-                #
-                # However, some of the elements in the body might be null,
-                # which means that that pixel should go unchanged.
-                #
-                # Example:
-                # [ [255, 0, 0], null, [0, 0, 255] ]
-                pixels: list[tuple[int, int, int]] = []
-                for pixel in json.loads(body):
-                    print("Pixel: ", pixel)
-                    if pixel == None:
-                        pixels.append(None)
-                    else:
-                        pixels.append(tuple(pixel))
+                # {
+                #   0: (255, 0, 0),
+                #   1: (0, 255, 0),
+                #   2: (0, 0, 255)
+                # }
+                bodyData = json.loads(body)
+                if not isinstance(bodyData, dict):
+                    raise Exception(
+                        "Body is not a dictionary, but an " + str(type(bodyData))
+                    )
+
+                pixels: dict[int, tuple[int, int, int]] = {}
+
+                def isValidData(i):
+                    if not isinstance(i, str) or not i.isdigit():
+                        return False
+
+                    value = bodyData[i]
+                    index = int(i)
+                    return (
+                        value != None
+                        and isinstance(value, list)
+                        and len(value) == 3
+                        and all([isinstance(x, int) for x in value])
+                        and pixels.get(index) == None
+                    )
+
+                for i in bodyData:
+                    if isValidData(i):
+                        pixels[int(i)] = tuple(bodyData[i])
 
                 controller.setPixels(pixels)
                 self._set_response(
-                    200, dict_to_json({"success": True, "pixels": pixels})
+                    200,
+                    dict_to_json({"success": True, "pixels": pixels}),
                 )
             except Exception as e:
                 logging.error(e)

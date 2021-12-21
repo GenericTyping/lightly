@@ -19,18 +19,24 @@ class LedController(Protocol):
     count: int
     order: str
 
-    def setPixels(self, pixels: list[tuple[int, int, int]]):
+    def setPixels(self, pixels: dict[int, tuple[int, int, int]]):
+        """Sets the LEDs at the given indices to the given colors."""
         print("Unimplemented method setPixels() called with", pixels)
 
     def buildPixels(
-        self, colors: Callable[[int], tuple[int, int, int]]
-    ) -> list[tuple[int, int, int]]:
+        self, buildColor: Callable[[int], tuple[int, int, int]]
+    ) -> dict[int, tuple[int, int, int]]:
         """Runs the given pixel builder callback for each pixel in the chain
-        and returns the resulting list of pixels.
+        and returns the resulting dictionary of pixels.
 
         The callback should take a single argument, which is the current pixel index.
         """
-        return [colors(i) for i in range(self.count)]
+        pixels: dict[int, tuple[int, int, int]] = {}
+        for i in range(self.count):
+            pixel = buildColor(i)
+            if pixel is not None:
+                pixels[i] = pixel
+        return pixels
 
 
 # Neopixel

@@ -1,121 +1,122 @@
+#!/usr/bin/env python3
+"""
+This simple Python server is responsible for handling the requests
+from the Node.js server (../server) and controlling the LEDs.
+"""
+
 import sys
 import json
-import board
-import neopixel
 import time
 import logging
 from datetime import datetime
 from http.server import BaseHTTPRequestHandler, HTTPServer
 
-# Constants
-HOST_NAME = '0.0.0.0'
-SERVER_PORT = 1337
+from led_controller.led_controller import LedController
 
-PIXEL_PIN = board.D18
-NUM_PIXELS = 200
-ORDER = neopixel.GRB
+controller: LedController = None
+
+try:
+    from led_controller.pi_controller import PiController
+
+    controller = PiController()
+except ImportError:
+    from led_controller.mock_controller import MockController
+
+    controller = MockController()
+
+# Constants
+HOST_NAME = "0.0.0.0"
+SERVER_PORT = 1234
 
 # HTTP
 class LightlyLocalServer(BaseHTTPRequestHandler):
-    def do_GET(self):
-        self.send_response(200)
+    def _writeResponse(self, data: str):
+        self.wfile.write(bytes(data, "utf-8"))
+
+    def _set_response(self, code: int, data: str = None):
+        self.send_response(code)
         self.send_header("Content-type", "application/json")
         self.end_headers()
-        self.wfile.write(bytes('{"status": "OK"}', "utf-8"))
+        if data != None:
+            self._writeResponse(data)
 
-if __name__ == "__main__":        
-    webServer = HTTPServer((HOST_NAME, SERVER_PORT), LightlyLocalServer)
-    print("Server started http://%s:%s" % (HOST_NAME, SERVER_PORT))
+    def do_GET(self):
+        logging.info(
+            "GET request,\nPath: %s\nHeaders:\n%s\n", str(self.path), str(self.headers)
+        )
+        self._set_response(200)
 
+    def do_POST(self):
+        content_length = int(self.headers["Content-Length"])
+        post_data = self.rfile.read(content_length)
+        body = post_data.decode("utf-8")
+        logging.info(
+            "POST request,\nPath: %s\nHeaders:\n%s\n\nBody:\n%s\n",
+            str(self.path),
+            str(self.headers),
+            body,
+        )
+
+        if self.path == "/set":
+            try:
+                # 'body' is a JSON list of lists, each containing 3 elements
+                # representing a pixel's RGB values.
+                #
+                # Example:
+                # [ [255, 0, 0], [0, 255, 0], [0, 0, 255] ]
+                #
+                # It needs to be converted to a list of tuples, each containing
+                # 3 elements representing a pixel's RGB values.
+                #
+                # Example:
+                # [ (255, 0, 0), (0, 255, 0), (0, 0, 255) ]
+                #
+                # However, some of the elements in the body might be null,
+                # which means that that pixel should go unchanged.
+                #
+                # Example:
+                # [ [255, 0, 0], null, [0, 0, 255] ]
+                pixels: list[tuple[int, int, int]] = []
+                for pixel in json.loads(body):
+                    if pixel == None:
+                        pixels.append(None)
+                    else:
+                        pixels.append(tuple(pixel))
+
+                controller.setPixels(pixels)
+                self._set_response(200, '{"status": "OK", "action": "set"}')
+            except Exception as e:
+                logging.error(e)
+                self._set_response(400, '{"status": "ERROR", "action": "set"}')
+        else:
+            # Unknown path
+            self._set_response(404)
+
+
+def runServer():
+    server_address = (HOST_NAME, SERVER_PORT)
+    httpd = HTTPServer(server_address, LightlyLocalServer)
+    logging.info("Starting httpd on %s:%s", HOST_NAME, SERVER_PORT)
     try:
-        webServer.serve_forever()
+        httpd.serve_forever()
     except KeyboardInterrupt:
         pass
-
-    webServer.server_close()
-    print("Server stopped.")
-
-# Neopixel
-pixels = neopixel.NeoPixel(
-  PIXEL_PIN,
-  NUM_PIXELS,
-  pixel_order=ORDER,
-  auto_write=False,
-  brightness=0.2,
-)
-
-# def wheel(pos):
-#   # Input a value 0 to 255 to get a color value.
-#   # The colours are a transition r - g - b - back to r.
-#   if pos < 0 or pos > 255:
-#     r = g = b = 0
-#   elif pos < 85:
-#     r = int(pos * 3)
-#     g = int(255 - pos * 3)
-#     b = 0
-#   elif pos < 170:
-#     pos -= 85
-#     r = int(255 - pos * 3)
-#     g = 0
-#     b = int(pos * 3)
-#   else:
-#     pos -= 170
-#     r = 0
-#     g = int(pos * 3)
-#     b = int(255 - pos * 3)
-#   return (r, g, b) if ORDER in (neopixel.RGB, neopixel.GRB) else (r, g, b, 0)
+    httpd.server_close()
+    logging.info("Stopping httpd")
 
 
-# def rainbow_cycle(wait):
-#   for j in range(255):
-#     for i in range(NUM_PIXELS):
-#       pixel_index = (i * 256 // NUM_PIXELS) + j
-#       pixels[i] = wheel(pixel_index & 255)
-#     pixels.show()
-#     time.sleep(wait)
-
-
-# while True:
-#   # Comment this line out if you have RGBW/GRBW NeoPixels
-#   pixels.fill((255, 0, 0))
-#   # Uncomment this line if you have RGBW/GRBW NeoPixels
-#   # pixels.fill((255, 0, 0, 0))
-#   pixels.show()
-#   time.sleep(1)
-
-#   # Comment this line out if you have RGBW/GRBW NeoPixels
-#   pixels.fill((0, 255, 0))
-#   # Uncomment this line if you have RGBW/GRBW NeoPixels
-#   # pixels.fill((0, 255, 0, 0))
-#   pixels.show()
-#   time.sleep(1)
-
-#   # Comment this line out if you have RGBW/GRBW NeoPixels
-#   pixels.fill((0, 0, 255))
-#   # Uncomment this line if you have RGBW/GRBW NeoPixels
-#   # pixels.fill((0, 0, 255, 0))
-#   pixels.show()
-#   time.sleep(1)
-
-#   rainbow_cycle(0.001)  # rainbow cycle with 1ms delay per step
-
-firstArg = sys.argv[1]
-print('Arg: ', firstArg)
-jsonPayload = json.loads(firstArg)
-print('Json payload: ', jsonPayload)
-
-rgb = jsonPayload
-
-pixels = neopixel.NeoPixel(board.D18, 200, brightness=1)
-
-for _i in range(5):
-  print('%s Blackout' % datetime.now())
-  pixels.fill((0, 0, 0))
-  time.sleep(0.5)
-
-  print('%s Show LED' % datetime.now())
-  # G, R, B
-  pixels.fill((rgb[1], rgb[0], rgb[2]))
-  pixels.show()
-  time.sleep(0.5)
-  print('--------------')
+if __name__ == "__main__":
+    now = datetime.now()
+    logging.basicConfig(
+        format="%(asctime)s - %(levelname)s - %(message)s",
+        level=logging.INFO,
+        handlers=[
+            # logging.FileHandler with file called "debug_${date as iso string}.log"
+            logging.FileHandler(
+                "debug_" + now.strftime("%Y-%m-%d_%H-%M-%S") + ".log",
+                mode="w",
+            ),
+            logging.StreamHandler(),
+        ],
+    )
+    runServer()
